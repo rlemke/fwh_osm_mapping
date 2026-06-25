@@ -49,11 +49,12 @@ WORLD_GEOJSON_URL = (
 FFL_URL = "https://github.com/rlemke/fwh_osm_mapping/blob/main/src/osm_mapping/ffl/osm_mapping.ffl"
 USER_AGENT = "facetwork-osm-mapping/1.0 (+https://github.com/rlemke/facetwork)"
 
-# Use the kumi mirror first for the bulk per-country job (spares the main
-# instance, which the save-earth maps also use); fall back to the main instance.
+# Main Overpass instance first (empirically fast for per-country area counts:
+# ~10-90s); the kumi mirror is a fallback. (Kumi-first was observed timing out
+# per country and falling back, ~10x slower overall.)
 OVERPASS_ENDPOINTS = (
-    "https://overpass.kumi.systems/api/interpreter",
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
 )
 # Health facilities to count. Hospitals + clinics is the "mapped health
 # facilities" basket; both as nodes/ways/relations (centroids not needed for a
