@@ -61,7 +61,10 @@ OVERPASS_ENDPOINTS = (
 # count). Kept as an Overpass filter fragment.
 FACILITY_FILTER = '(nwr["amenity"="hospital"](area.a);nwr["amenity"="clinic"](area.a););'
 MAX_WORKERS = 3          # polite concurrency against Overpass
-PER_COUNTRY_TIMEOUT = 150
+# Most countries count in <90s, but the heavily-mapped ones are slow: the US
+# took ~244s (Germany ~93s). Keep this above the slowest so a bulk run doesn't
+# drop big countries to no-data (the US hit the old 150s limit and went blank).
+PER_COUNTRY_TIMEOUT = 300
 RETRIES = 2
 
 
