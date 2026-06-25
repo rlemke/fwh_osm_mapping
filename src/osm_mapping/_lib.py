@@ -74,6 +74,10 @@ RAMP = [
     [0.75, "#f03b20"], [1.0, "#bd0026"],
 ]
 NODATA = "#e0e0e0"
+# Distinct colour for the high tail (above the 90th-percentile cap) so a few
+# extreme outliers (e.g. Greenland, ~600/M from its tiny population) don't
+# compress the ramp for everyone else.
+OUTLIER = "#5e3c99"
 
 
 @dataclass
@@ -353,7 +357,10 @@ def _render_html(fc: dict) -> str:
   <div style="margin-top:5px;color:#555">Mapped health facilities (OpenStreetMap
   <b>amenity=hospital / clinic</b>) per million people, by country. On the primary
   metric, <b>dark = fewer per capita = more under-mapped</b>. Click a country for
-  its values. <b>Caveat:</b> a single feature class blends mapping completeness with
+  its values. The scale is clamped at the 90th percentile so a few extreme outliers
+  (e.g. Greenland, ~600/M from its tiny population) don't compress the range; those
+  high outliers are drawn in <b style="color:#5e3c99">purple</b>.
+  <b>Caveat:</b> a single feature class blends mapping completeness with
   real-world provision; read low values as "under-mapped <i>or</i> underserved".
   Data: OpenStreetMap via Overpass; population from Natural Earth.</div>
 </div>
@@ -365,23 +372,33 @@ const fmt=(v,f)=>{{ if(v===null||v===undefined||v==='') return '—';
   if(f==='rate') return (Math.round(v*10)/10)+' /M';
   return Math.round(v).toLocaleString(); }};
 const vals=k=>DATA.features.map(f=>f.properties[k]).filter(v=>typeof v==='number'&&v>=0);
+// Robust scale: clamp the ramp to [min, p90] so a few extreme outliers don't
+// compress the colours for the other ~90% of countries. Values above the p90
+// cap get their own distinct OUTLIER colour (e.g. Greenland on per-capita).
+function quantile(s,q){{ const i=(s.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i);
+  return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(i-lo); }}
+function bounds(m){{ const a=vals(m.key).slice().sort((x,y)=>x-y);
+  if(!a.length) return null; let lo=a[0], hi=quantile(a,0.90); if(lo>=hi) hi=lo+1; return [lo,hi]; }}
 function colorExpr(m){{
-  const a=vals(m.key); if(!a.length) return '{NODATA}';
-  let lo=Math.min(...a), hi=Math.max(...a); if(lo===hi) hi=lo+1;
+  const b=bounds(m); if(!b) return '{NODATA}'; const lo=b[0], hi=b[1];
   // worse==='low' → low values get the dark end (reverse the ramp colours).
   const cols=(m.worse==='low')?RAMP.map(r=>r[1]).slice().reverse():RAMP.map(r=>r[1]);
   const expr=['interpolate',['linear'],['get',m.key]];
   RAMP.forEach((r,i)=>expr.push(lo+(hi-lo)*r[0], cols[i]));
-  return ['case',['==',['get',m.key],null],'{NODATA}',expr];
+  return ['case',['==',['get',m.key],null],'{NODATA}',
+          ['>',['get',m.key],hi],'{OUTLIER}', expr];
 }}
 function legend(m){{
   document.getElementById('lgttl').textContent=m.label+(m.worse==='low'?'  (dark = under-mapped)':'');
-  const a=vals(m.key); const sc=document.getElementById('lgscale'); sc.innerHTML='';
-  if(!a.length) return; let lo=Math.min(...a),hi=Math.max(...a);
+  const b=bounds(m); const sc=document.getElementById('lgscale'); sc.innerHTML='';
+  if(!b) return; const lo=b[0], hi=b[1];
   const cols=(m.worse==='low')?RAMP.map(r=>r[1]).slice().reverse():RAMP.map(r=>r[1]);
   RAMP.forEach((r,i)=>{{ const d=document.createElement('div');
     d.innerHTML=`<span style="background:${{cols[i]}}"></span>${{fmt(lo+(hi-lo)*r[0],m.fmt)}}`;
     sc.appendChild(d); }});
+  const o=document.createElement('div');
+  o.innerHTML=`<span style="background:{OUTLIER}"></span>${{'>'+fmt(hi,m.fmt)}}`;
+  sc.appendChild(o);
 }}
 const map=new maplibregl.Map({{container:'map',style:{{version:8,
   sources:{{bm:{{type:'raster',tiles:['https://a.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}.png','https://b.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}.png'],tileSize:256,attribution:'&copy; OpenStreetMap &copy; CARTO'}}}},
