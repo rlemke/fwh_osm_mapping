@@ -39,13 +39,14 @@ def test_dispatch_keys():
     assert set(oh._DISPATCH) == {
         "osm_mapping.sources.CountFacilities",
         "osm_mapping.maps.BuildMappingMap",
+        "osm_mapping.maps.BuildUsMap",
     }
 
 
 def test_register_handlers_blocking():
     runner = MagicMock()
     oh.register_handlers(runner)
-    assert runner.register_handler.call_count == 2
+    assert runner.register_handler.call_count == 3
     # long blocking fan-out → registered with timeout_ms=0
     for c in runner.register_handler.call_args_list:
         assert c.kwargs.get("timeout_ms") == 0

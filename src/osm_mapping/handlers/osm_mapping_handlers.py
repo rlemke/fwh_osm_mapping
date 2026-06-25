@@ -6,6 +6,7 @@ import os
 from typing import Any
 
 from .._lib import build_map, download_facility_counts
+from .._us import build_us_map
 
 SRC = "osm_mapping.sources"
 MAPS = "osm_mapping.maps"
@@ -48,9 +49,35 @@ def handle_build_mapping_map(params: dict[str, Any]) -> dict[str, Any]:
         raise
 
 
+def handle_build_us_map(params: dict[str, Any]) -> dict[str, Any]:
+    """Build the US state+county health-facility-per-capita map (Overpass fetch +
+    spatial join onto census-us county geometry)."""
+    step_log = params.get("_step_log")
+    try:
+        res = build_us_map(force=bool(params.get("force")))
+        if step_log:
+            step_log(
+                f"BuildUsMap: {res.facility_count} facilities -> "
+                f"{res.county_count} counties / {res.state_count} states "
+                f"-> {res.html_path}",
+                level="success",
+            )
+        return {
+            "html_path": res.html_path,
+            "facility_count": res.facility_count,
+            "county_count": res.county_count,
+            "state_count": res.state_count,
+        }
+    except Exception as exc:
+        if step_log:
+            step_log(f"BuildUsMap: {exc}", level="error")
+        raise
+
+
 _DISPATCH: dict[str, Any] = {
     f"{SRC}.CountFacilities": handle_count_facilities,
     f"{MAPS}.BuildMappingMap": handle_build_mapping_map,
+    f"{MAPS}.BuildUsMap": handle_build_us_map,
 }
 
 

@@ -30,6 +30,18 @@ namespace osm_mapping.maps {
         country_count: Int,
         matched: Int
     ) with Effect(kind = "io") with Cost(tier = "cheap") with Timeout(minutes = 10)
+
+    /** US zoom: fetch US health facilities (Overpass), spatial-join onto census
+      * county geometry, and render a state+county per-capita choropleth with a
+      * level toggle. Reuses the census-us cached county GeoJSON. */
+    event facet BuildUsMap(
+        force: Boolean = false
+    ) => (
+        html_path: String,
+        facility_count: Int,
+        county_count: Int,
+        state_count: Int
+    ) with Effect(kind = "external") with Cost(tier = "expensive") with Timeout(minutes = 20)
 }
 
 namespace osm_mapping.workflows {
@@ -47,6 +59,19 @@ namespace osm_mapping.workflows {
             html_path = map.html_path,
             country_count = map.country_count,
             matched = map.matched
+        )
+    }
+
+    /** Build the US state+county health-facility-per-capita map. */
+    workflow BuildUsHealthMappingMap(
+        force: Boolean = false
+    ) => (status: String, html_path: String, facility_count: Int, county_count: Int) andThen {
+        map = BuildUsMap(force = $.force)
+        yield BuildUsHealthMappingMap(
+            status = "completed",
+            html_path = map.html_path,
+            facility_count = map.facility_count,
+            county_count = map.county_count
         )
     }
 }
