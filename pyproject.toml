@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osm_mapping"
+version = "0.1.0"
+description = "Facetwork domain: OSM mapping-equity world map (health facilities per capita)"
+requires-python = ">=3.11"
+authors = [{name = "Ralph Lemke"}]
+dependencies = ["requests"]
+
+[project.entry-points."facetwork.domains"]
+osm_mapping = "osm_mapping:domain"
+
+[tool.setuptools.packages.find]
+where = ["src"]

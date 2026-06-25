@@ -1,0 +1,52 @@
+// osm-mapping domain — OSM mapping-equity world map.
+//
+// CountFacilities counts mapped health facilities (amenity=hospital/clinic) per
+// country via the Overpass API (one bounded area-count per country, cached);
+// BuildMappingMap joins the counts onto Natural Earth country geometry, computes
+// facilities-per-million from POP_EST, and renders a MapLibre choropleth where
+// dark = fewer per capita = more under-mapped. Output -> cache/osm-mapping/output/index.html.
+
+namespace osm_mapping.sources {
+    /** Count OSM health facilities (amenity=hospital/clinic) per country via the
+      * Overpass API and cache the small per-country aggregate. A bounded area
+      * count per country (not one global query, which is too large to be
+      * reliable); per-country failures are tolerated. */
+    event facet CountFacilities(
+        force: Boolean = false
+    ) => (
+        country_count: Int
+    ) with Effect(kind = "external") with Cost(tier = "expensive") with Timeout(minutes = 45)
+}
+
+namespace osm_mapping.maps {
+    /** Join the cached facility counts onto Natural Earth country geometry,
+      * compute facilities-per-million from population, and render the world
+      * choropleth. ``dependency_signal`` sequences this after the count. */
+    event facet BuildMappingMap(
+        dependency_signal: Int = 0
+    ) => (
+        html_path: String,
+        geojson_path: String,
+        country_count: Int,
+        matched: Int
+    ) with Effect(kind = "io") with Cost(tier = "cheap") with Timeout(minutes = 10)
+}
+
+namespace osm_mapping.workflows {
+    use osm_mapping.sources
+    use osm_mapping.maps
+
+    /** Build the OSM mapping-equity world map (health facilities per capita). */
+    workflow BuildMappingEquityMap(
+        force: Boolean = false
+    ) => (status: String, html_path: String, country_count: Int, matched: Int) andThen {
+        counts = CountFacilities(force = $.force)
+        map = BuildMappingMap(dependency_signal = counts.country_count)
+        yield BuildMappingEquityMap(
+            status = "completed",
+            html_path = map.html_path,
+            country_count = map.country_count,
+            matched = map.matched
+        )
+    }
+}
