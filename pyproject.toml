@@ -11,7 +11,7 @@ authors = [{name = "Ralph Lemke"}]
 dependencies = ["requests"]
 
 [project.entry-points."facetwork.domains"]
-osm_mapping = "osm_mapping:domain"
+osm-mapping = "osm_mapping:domain"
 
 [tool.setuptools.packages.find]
 where = ["src"]

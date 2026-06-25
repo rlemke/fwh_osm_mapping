@@ -5,7 +5,7 @@ Builds a world country choropleth of mapped health-facility density per capita
 runner via the ``facetwork.domains`` entry point in pyproject.toml::
 
     [project.entry-points."facetwork.domains"]
-    osm_mapping = "osm_mapping:domain"
+    osm-mapping = "osm_mapping:domain"
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from .handlers import register_all_registry_handlers
 # The per-country Overpass fan-out is a long one-time job; give it room before
 # the global execution-timeout watchdog fires (counts are cached afterwards).
 domain = DomainPackage(
-    name="osm_mapping",
+    name="osm-mapping",
     ffl_dir=Path(__file__).parent / "ffl",
     register_handlers=register_all_registry_handlers,
     runner_env={
