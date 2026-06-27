@@ -21,6 +21,31 @@ population (a recognised OSM "digital divide" / mapping-inequality signal).
 - **Storage** — cache + output follow `AFL_STORAGE` (`local` / `hdfs` / `s3`);
   on the fleet they land in the shared MinIO at `cache/osm-mapping/`.
 
+## OSM tag-quality (attribute-misuse) maps
+
+The sibling of under-mapping ("where data is *missing*") is **mis-mapping**:
+where the tags actually used on OSM entities **deviate from current valid
+conventions**. `_tagquality.py` builds choropleths of that, to find cleanup
+priorities by region:
+
+- **Source** — `osm_mapping.sources.FetchTagIssues`: counts of **Osmose QA**
+  issues — item **9002 "deprecated"** (tags superseded by newer conventions) +
+  **3040 "incorrect tag"** — for every Osmose **leaf** region (only leaves carry
+  issues; country/state parents return 0), aggregated upward. **This queries the
+  Osmose QA API only — it never downloads OSM data** (no planet, no extracts, no
+  Overpass) — and caches one small aggregate JSON; it is **cache-first with no
+  TTL** (reuses the cache even if stale unless `force=true`).
+- **Maps** — `BuildTagQualityWorld` (by country, Natural Earth) and
+  `BuildTagQualityUsStates` (by state, TIGER), normalised **per 1,000 km²**
+  (geodesic area), with absolute counts as a secondary metric and a region
+  search. Workflows: `BuildTagQualityWorldMap` / `BuildTagQualityUsStatesMap`.
+  (`BuildTagQualityUsCounties` exists but Osmose only subdivides ~1 US state to
+  county level, so a national county map is mostly empty — held.)
+- **Honest caveat** — Osmose analyzer coverage *and* OSM mapping age both
+  confound a raw read (older areas carry more deprecated tags simply because they
+  were tagged years ago), and per-area favours small dense regions. A
+  **cleanup-prioritisation aid, not a quality verdict.**
+
 ## Honest caveat
 
 A single feature class blends **mapping completeness** with **real-world
