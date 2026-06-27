@@ -7,9 +7,45 @@ from typing import Any
 
 from .._lib import build_map, download_facility_counts
 from .._us import build_us_map
+from .._tagquality import (
+    build_us_counties,
+    build_us_states,
+    build_world,
+    fetch_osmose_counts,
+)
 
 SRC = "osm_mapping.sources"
 MAPS = "osm_mapping.maps"
+
+
+def _tq(fn, label):
+    def handler(params: dict[str, Any]) -> dict[str, Any]:
+        step_log = params.get("_step_log")
+        try:
+            res = fn(force=bool(params.get("force")))
+            if step_log:
+                step_log(f"{label}: {res.detail} -> {res.html_path}", level="success")
+            return {"region": res.region, "html_path": res.html_path,
+                    "feature_count": res.feature_count, "detail": res.detail}
+        except Exception as exc:
+            if step_log:
+                step_log(f"{label}: {exc}", level="error")
+            raise
+    return handler
+
+
+def handle_fetch_tag_issues(params: dict[str, Any]) -> dict[str, Any]:
+    """Fetch + cache Osmose tag-quality counts for every leaf region."""
+    step_log = params.get("_step_log")
+    try:
+        counts = fetch_osmose_counts(force=bool(params.get("force")))
+        if step_log:
+            step_log(f"FetchTagIssues: {len(counts)} leaf regions cached", level="success")
+        return {"leaf_count": len(counts)}
+    except Exception as exc:
+        if step_log:
+            step_log(f"FetchTagIssues: {exc}", level="error")
+        raise
 
 
 def handle_count_facilities(params: dict[str, Any]) -> dict[str, Any]:
@@ -78,6 +114,10 @@ _DISPATCH: dict[str, Any] = {
     f"{SRC}.CountFacilities": handle_count_facilities,
     f"{MAPS}.BuildMappingMap": handle_build_mapping_map,
     f"{MAPS}.BuildUsMap": handle_build_us_map,
+    f"{SRC}.FetchTagIssues": handle_fetch_tag_issues,
+    f"{MAPS}.BuildTagQualityWorld": _tq(build_world, "BuildTagQualityWorld"),
+    f"{MAPS}.BuildTagQualityUsStates": _tq(build_us_states, "BuildTagQualityUsStates"),
+    f"{MAPS}.BuildTagQualityUsCounties": _tq(build_us_counties, "BuildTagQualityUsCounties"),
 }
 
 

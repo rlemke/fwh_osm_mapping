@@ -16,6 +16,15 @@ namespace osm_mapping.sources {
     ) => (
         country_count: Int
     ) with Effect(kind = "external") with Cost(tier = "expensive") with Timeout(minutes = 45)
+
+    /** Fetch + cache OSM tag-quality counts (Osmose QA items 9002 deprecated +
+      * 3040 incorrect tag) for every leaf region worldwide. One small aggregate
+      * cached in MinIO; the tag-quality maps all read from it. */
+    event facet FetchTagIssues(
+        force: Boolean = false
+    ) => (
+        leaf_count: Int
+    ) with Effect(kind = "external") with Cost(tier = "expensive") with Timeout(minutes = 60)
 }
 
 namespace osm_mapping.maps {
@@ -42,6 +51,32 @@ namespace osm_mapping.maps {
         county_count: Int,
         state_count: Int
     ) with Effect(kind = "external") with Cost(tier = "expensive") with Timeout(minutes = 20)
+
+    /** Tag-quality world choropleth by country: Osmose deprecated + incorrect-tag
+      * issues aggregated to Natural Earth countries, per 1,000 km². */
+    event facet BuildTagQualityWorld(
+        dependency_signal: Int = 0,
+        force: Boolean = false
+    ) => (
+        region: String, html_path: String, feature_count: Int, detail: String
+    ) with Effect(kind = "io") with Cost(tier = "moderate") with Timeout(minutes = 15)
+
+    /** Tag-quality US choropleth by state (Osmose issues per 1,000 km²). */
+    event facet BuildTagQualityUsStates(
+        dependency_signal: Int = 0,
+        force: Boolean = false
+    ) => (
+        region: String, html_path: String, feature_count: Int, detail: String
+    ) with Effect(kind = "io") with Cost(tier = "moderate") with Timeout(minutes = 15)
+
+    /** Tag-quality US choropleth by county (Osmose issues per 1,000 km²; reuses
+      * the census-us county geometry cache). */
+    event facet BuildTagQualityUsCounties(
+        dependency_signal: Int = 0,
+        force: Boolean = false
+    ) => (
+        region: String, html_path: String, feature_count: Int, detail: String
+    ) with Effect(kind = "io") with Cost(tier = "moderate") with Timeout(minutes = 20)
 }
 
 namespace osm_mapping.workflows {
@@ -73,5 +108,32 @@ namespace osm_mapping.workflows {
             facility_count = map.facility_count,
             county_count = map.county_count
         )
+    }
+
+    /** Build the world OSM tag-quality (attribute-misuse) map by country. */
+    workflow BuildTagQualityWorldMap(
+        force: Boolean = false
+    ) => (status: String, html_path: String, detail: String) andThen {
+        issues = FetchTagIssues(force = $.force)
+        map = BuildTagQualityWorld(dependency_signal = issues.leaf_count)
+        yield BuildTagQualityWorldMap(status = "completed", html_path = map.html_path, detail = map.detail)
+    }
+
+    /** Build the US-by-state OSM tag-quality map. */
+    workflow BuildTagQualityUsStatesMap(
+        force: Boolean = false
+    ) => (status: String, html_path: String, detail: String) andThen {
+        issues = FetchTagIssues(force = $.force)
+        map = BuildTagQualityUsStates(dependency_signal = issues.leaf_count)
+        yield BuildTagQualityUsStatesMap(status = "completed", html_path = map.html_path, detail = map.detail)
+    }
+
+    /** Build the US-by-county OSM tag-quality map. */
+    workflow BuildTagQualityUsCountiesMap(
+        force: Boolean = false
+    ) => (status: String, html_path: String, detail: String) andThen {
+        issues = FetchTagIssues(force = $.force)
+        map = BuildTagQualityUsCounties(dependency_signal = issues.leaf_count)
+        yield BuildTagQualityUsCountiesMap(status = "completed", html_path = map.html_path, detail = map.detail)
     }
 }
