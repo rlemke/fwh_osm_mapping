@@ -18,7 +18,7 @@ population (a recognised OSM "digital divide" / mapping-inequality signal).
   search, click-for-values, provenance footer). **Dark = fewer per capita = more
   under-mapped.**
 - **Workflow** — `osm_mapping.workflows.BuildMappingEquityMap`.
-- **Storage** — cache + output follow `AFL_STORAGE` (`local` / `hdfs` / `s3`);
+- **Storage** — cache + output follow `FW_STORAGE` (`local` / `hdfs` / `s3`);
   on the fleet they land in the shared MinIO at `cache/osm-mapping/`.
 
 ## OSM tag-quality (attribute-misuse) maps

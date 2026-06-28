@@ -157,15 +157,15 @@ def _list_census_states() -> list[str]:
     import facetwork.runtime.storage as _fws  # noqa
     import boto3
     import os
-    # Resolve the bucket from AFL_DATA_ROOT (s3://bucket); local falls back to a scan.
+    # Resolve the bucket from FW_DATA_ROOT (s3://bucket); local falls back to a scan.
     data_root = cstore._data_root()
     if cstore.is_remote(data_root):
         bucket = data_root.split("://", 1)[1].split("/", 1)[0]
-        ep = os.environ.get("AFL_S3_ENDPOINT")
+        ep = os.environ.get("FW_S3_ENDPOINT")
         s3 = boto3.client(
             "s3", endpoint_url=ep,
-            aws_access_key_id=os.environ.get("AFL_S3_ACCESS_KEY"),
-            aws_secret_access_key=os.environ.get("AFL_S3_SECRET_KEY"),
+            aws_access_key_id=os.environ.get("FW_S3_ACCESS_KEY"),
+            aws_secret_access_key=os.environ.get("FW_S3_SECRET_KEY"),
         )
         states = set()
         for pg in s3.get_paginator("list_objects_v2").paginate(

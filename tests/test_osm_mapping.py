@@ -59,8 +59,8 @@ def test_country_iso2_fallback():
 
 
 def test_build_map_joins_and_renders(monkeypatch, tmp_path):
-    monkeypatch.setenv("AFL_STORAGE", "local")
-    monkeypatch.setenv("AFL_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("FW_STORAGE", "local")
+    monkeypatch.setenv("FW_DATA_ROOT", str(tmp_path))
     # stub the two network calls
     monkeypatch.setattr(_lib, "_world_geojson", lambda: json.loads(json.dumps(_WORLD)))
     monkeypatch.setattr(_lib, "download_facility_counts",
