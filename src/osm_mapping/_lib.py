@@ -245,7 +245,10 @@ def build_map(*, force: bool = False) -> OsmMapResult:
     fc = {"type": "FeatureCollection", "features": feats}
     html = _render_html(fc)
 
-    out_dir = cstore.output_root()
+    # Write into a dedicated "under-mapping" subdir (siblings tag-quality / us
+    # write to their own subdirs). Using the bare output_root() here meant
+    # publishing this map's prefix dragged every sibling map into the dest.
+    out_dir = cstore.join(cstore.output_root(), "under-mapping")
     geojson_path = cstore.join(out_dir, "osm-mapping.geojson")
     html_path = cstore.join(out_dir, "index.html")
     with cstore.open_write(geojson_path, "w") as f:
