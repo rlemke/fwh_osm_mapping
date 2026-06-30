@@ -310,6 +310,15 @@ def _render_html(state_fc: dict, county_fc: dict) -> str:
     state_js = json.dumps(state_fc, separators=(",", ":"))
     county_js = json.dumps(county_fc, separators=(",", ":"))
     ramp_js = json.dumps(RAMP)
+    # Shared descriptive + source text — panel AND "About this data" modal.
+    desc = (
+        "Mapped health facilities (OpenStreetMap <b>amenity=hospital / clinic</b>) "
+        "per 100,000 people. <b>Dark = fewer per capita = more under-mapped</b>. Scale "
+        'clamped at the 90th percentile; high outliers in <b style="color:#5e3c99">'
+        "purple</b>. Click an area for its values. <b>Caveat:</b> blends mapping "
+        "completeness with real provision (under-mapped <i>or</i> underserved). Data: "
+        "OpenStreetMap via Overpass; geometry + population from US Census TIGER/ACS."
+    )
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>US OSM mapping equity - health facilities per capita</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -328,6 +337,12 @@ def _render_html(state_fc: dict, county_fc: dict) -> str:
   .maplibregl-popup-content h4{{margin:0 0 4px;font-size:13px}}
   table.m{{border-collapse:collapse;margin-top:4px}} table.m td{{padding:1px 6px 1px 0}}
   table.m td.v{{text-align:right}}
+  .infobtn{{margin-top:8px;width:100%;padding:7px;font-size:13px;cursor:pointer;background:#fff8e1;border:1px solid #f6c343;border-radius:4px;color:#5d4b00}}
+  .infobtn:hover{{background:#fff2c4}}
+  .modal{{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}}
+  .modalcard{{background:#fff;max-width:460px;margin:16px;padding:18px 20px 20px;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.4);position:relative;font:13px/1.5 system-ui,sans-serif;max-height:80vh;overflow:auto}}
+  .modalcard h2{{margin:0 0 8px;font-size:16px}} .modalbody{{color:#333}} .modalbody b{{color:#111}}
+  .modalclose{{position:absolute;top:6px;right:10px;border:none;background:none;font-size:24px;line-height:1;cursor:pointer;color:#999}} .modalclose:hover{{color:#444}}
   .rsearch{{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;width:300px;max-width:70%}}
   .rsearch input{{width:100%;box-sizing:border-box;padding:7px 11px;border:1px solid #aaa;border-radius:6px;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2)}}
   .rsearch .res{{background:#fff;border-radius:0 0 6px 6px;box-shadow:0 2px 6px rgba(0,0,0,.2);max-height:240px;overflow:auto}}
@@ -341,15 +356,11 @@ def _render_html(state_fc: dict, county_fc: dict) -> str:
   <h3>US health-facility mapping &middot; per capita</h3>
   <label><input type="radio" name="lvl" value="state" checked> By state</label>
   &nbsp; <label><input type="radio" name="lvl" value="county"> By county</label>
-  <div style="margin-top:5px;color:#555">Mapped health facilities (OpenStreetMap
-  <b>amenity=hospital / clinic</b>) per 100,000 people. <b>Dark = fewer per capita =
-  more under-mapped</b>. Scale clamped at the 90th percentile; high outliers in
-  <b style="color:#5e3c99">purple</b>. Click an area for its values.
-  <b>Caveat:</b> blends mapping completeness with real provision (under-mapped
-  <i>or</i> underserved). Data: OpenStreetMap via Overpass; geometry + population
-  from US Census TIGER/ACS.</div>
+  <div style="margin-top:5px;color:#555">{desc}</div>
+  <button id="infobtn" class="infobtn">&#8505;&#65039; About this data</button>
 </div>
 <div id="legend" class="panel"><b id="lgttl"></b><div class="scale" id="lgscale"></div></div>
+<div id="infomodal" class="modal"><div class="modalcard"><button id="infoclose" class="modalclose">&times;</button><h2>About this data</h2><div class="modalbody">{desc}</div></div></div>
 {_attribution()}
 <script>
 const STATE={state_js}, COUNTY={county_js}, RAMP={ramp_js};
@@ -414,4 +425,9 @@ map.on('load',()=>{{
       res.appendChild(d);}});}});
   document.addEventListener('click',e=>{{if(!e.target.closest('.rsearch'))res.innerHTML='';}});
 }});
+const _im=document.getElementById('infomodal');
+if(_im){{const ib=document.getElementById('infobtn'),ic=document.getElementById('infoclose');
+ if(ib)ib.onclick=()=>{{_im.style.display='flex';}};
+ if(ic)ic.onclick=()=>{{_im.style.display='none';}};
+ _im.onclick=e=>{{if(e.target===_im)_im.style.display='none';}};}}
 </script></body></html>"""

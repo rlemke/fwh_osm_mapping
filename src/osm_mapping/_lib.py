@@ -331,6 +331,19 @@ def _render_html(fc: dict) -> str:
         [{"key": f"m_{m.key}", "label": m.label, "fmt": m.fmt, "worse": m.worse} for m in METRICS]
     )
     ramp_js = json.dumps(RAMP)
+    # Shared descriptive + source text — shown in the side panel AND the
+    # "About this data" modal so the map matches the rest of the gallery.
+    desc = (
+        "Mapped health facilities (OpenStreetMap <b>amenity=hospital / clinic</b>) "
+        "per million people, by country. On the primary metric, <b>dark = fewer per "
+        "capita = more under-mapped</b>. Click a country for its values. The scale is "
+        "clamped at the 90th percentile so a few extreme outliers (e.g. Greenland, "
+        "~600/M from its tiny population) don't compress the range; those high outliers "
+        'are drawn in <b style="color:#5e3c99">purple</b>. <b>Caveat:</b> a single '
+        "feature class blends mapping completeness with real-world provision; read low "
+        'values as "under-mapped <i>or</i> underserved". Data: OpenStreetMap via '
+        "Overpass; population from Natural Earth."
+    )
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>OSM mapping equity - health facilities per capita</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -349,6 +362,12 @@ def _render_html(fc: dict) -> str:
   .maplibregl-popup-content h4{{margin:0 0 4px;font-size:13px}}
   table.m{{border-collapse:collapse;margin-top:4px}} table.m td{{padding:1px 6px 1px 0}}
   table.m td.v{{text-align:right}} tr.sel td{{font-weight:700}}
+  .infobtn{{margin-top:8px;width:100%;padding:7px;font-size:13px;cursor:pointer;background:#fff8e1;border:1px solid #f6c343;border-radius:4px;color:#5d4b00}}
+  .infobtn:hover{{background:#fff2c4}}
+  .modal{{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}}
+  .modalcard{{background:#fff;max-width:460px;margin:16px;padding:18px 20px 20px;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.4);position:relative;font:13px/1.5 system-ui,sans-serif;max-height:80vh;overflow:auto}}
+  .modalcard h2{{margin:0 0 8px;font-size:16px}} .modalbody{{color:#333}} .modalbody b{{color:#111}}
+  .modalclose{{position:absolute;top:6px;right:10px;border:none;background:none;font-size:24px;line-height:1;cursor:pointer;color:#999}} .modalclose:hover{{color:#444}}
   {_search_css()}
 </style></head>
 <body>
@@ -357,17 +376,11 @@ def _render_html(fc: dict) -> str:
 <div id="ctl" class="panel">
   <h3>OSM mapping equity &middot; health facilities per capita</h3>
   <select id="metric"></select>
-  <div style="margin-top:5px;color:#555">Mapped health facilities (OpenStreetMap
-  <b>amenity=hospital / clinic</b>) per million people, by country. On the primary
-  metric, <b>dark = fewer per capita = more under-mapped</b>. Click a country for
-  its values. The scale is clamped at the 90th percentile so a few extreme outliers
-  (e.g. Greenland, ~600/M from its tiny population) don't compress the range; those
-  high outliers are drawn in <b style="color:#5e3c99">purple</b>.
-  <b>Caveat:</b> a single feature class blends mapping completeness with
-  real-world provision; read low values as "under-mapped <i>or</i> underserved".
-  Data: OpenStreetMap via Overpass; population from Natural Earth.</div>
+  <div style="margin-top:5px;color:#555">{desc}</div>
+  <button id="infobtn" class="infobtn">&#8505;&#65039; About this data</button>
 </div>
 <div id="legend" class="panel"><b id="lgttl"></b><div class="scale" id="lgscale"></div></div>
+<div id="infomodal" class="modal"><div class="modalcard"><button id="infoclose" class="modalclose">&times;</button><h2>About this data</h2><div class="modalbody">{desc}</div></div></div>
 {_attribution()}
 <script>
 const DATA={data_js}, METRICS={metrics_js}, RAMP={ramp_js};
@@ -424,5 +437,10 @@ map.on('load',()=>{{
   map.on('mouseenter','fill',()=>map.getCanvas().style.cursor='pointer');
   map.on('mouseleave','fill',()=>map.getCanvas().style.cursor='');
 }});
+const _im=document.getElementById('infomodal');
+if(_im){{const ib=document.getElementById('infobtn'),ic=document.getElementById('infoclose');
+ if(ib)ib.onclick=()=>{{_im.style.display='flex';}};
+ if(ic)ic.onclick=()=>{{_im.style.display='none';}};
+ _im.onclick=e=>{{if(e.target===_im)_im.style.display='none';}};}}
 {_search_js()}
 </script></body></html>"""

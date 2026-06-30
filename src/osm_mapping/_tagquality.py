@@ -382,6 +382,9 @@ def _render(feats: list[dict], title: str, subtitle: str, note: str, *,
     data_js = json.dumps(fc, separators=(",", ":"))
     metrics_js = json.dumps(_METRICS)
     first = _METRICS[0]["key"]
+    # "About this data" modal body — reuse the map's existing subtitle, note and
+    # source attribution so it matches the rest of the gallery.
+    about_html = f"<p>{subtitle}</p><p>{note}</p><p>{_ATTR}</p>"
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>{title}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -401,14 +404,22 @@ def _render(feats: list[dict], title: str, subtitle: str, note: str, *,
  .attribution{{position:absolute;bottom:0;right:0;z-index:2;background:rgba(255,255,255,.85);
   padding:4px 8px;font:11px system-ui,sans-serif;color:#444;max-width:440px}}
  .attribution a{{color:#1565c0;text-decoration:none}}
+ .infobtn{{margin-top:8px;width:100%;padding:7px;font-size:13px;cursor:pointer;background:#fff8e1;border:1px solid #f6c343;border-radius:4px;color:#5d4b00}}
+ .infobtn:hover{{background:#fff2c4}}
+ .modal{{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}}
+ .modalcard{{background:#fff;max-width:460px;margin:16px;padding:18px 20px 20px;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.4);position:relative;font:13px/1.5 system-ui,sans-serif;max-height:80vh;overflow:auto}}
+ .modalcard h2{{margin:0 0 8px;font-size:16px}} .modalbody{{color:#333}} .modalbody b{{color:#111}}
+ .modalclose{{position:absolute;top:6px;right:10px;border:none;background:none;font-size:24px;line-height:1;cursor:pointer;color:#999}} .modalclose:hover{{color:#444}}
 </style></head><body>
 <div id="map"></div>
 <div class="panel"><h1>{title}</h1><p>{subtitle}</p>
  <select id="metric"></select>
  <input id="search" placeholder="Find a region by name…" autocomplete="off">
- <div class="note">{note}</div></div>
+ <div class="note">{note}</div>
+ <button id="infobtn" class="infobtn">&#8505;&#65039; About this data</button></div>
 <div class="legend" id="legend"></div>
 <div class="attribution">{_ATTR}</div>
+<div id="infomodal" class="modal"><div class="modalcard"><button id="infoclose" class="modalclose">&times;</button><h2>About this data</h2><div class="modalbody">{about_html}</div></div></div>
 <script>
 const DATA={data_js}, METRICS={metrics_js};
 const map=new maplibregl.Map({{container:'map',style:{{version:8,sources:{{c:{{type:'raster',
@@ -449,4 +460,9 @@ map.on('load',()=>{{
   (function walk(c){{if(typeof c[0]==='number')b.extend(c);else c.forEach(walk);}})(f.geometry.coordinates);
   map.fitBounds(b,{{padding:40,maxZoom:7}});}};
 }});
+const _im=document.getElementById('infomodal');
+if(_im){{const ib=document.getElementById('infobtn'),ic=document.getElementById('infoclose');
+ if(ib)ib.onclick=()=>{{_im.style.display='flex';}};
+ if(ic)ic.onclick=()=>{{_im.style.display='none';}};
+ _im.onclick=e=>{{if(e.target===_im)_im.style.display='none';}};}}
 </script></body></html>"""
