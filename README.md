@@ -21,6 +21,22 @@ population (a recognised OSM "digital divide" / mapping-inequality signal).
 - **Storage** — cache + output follow `FW_STORAGE` (`local` / `hdfs` / `s3`);
   on the fleet they land in the shared MinIO at `cache/osm-mapping/`.
 
+## Feature specifications
+
+Every feature has a spec in [**`docs/`**](docs/README.md) — how it works,
+whether/how it **fans out** (these are single-task + in-process thread pools, not
+fleet fan-outs), what it **fetches** and on which **attributes**, the **external
+libraries/services** it uses, its **facets & workflows**, and its **cache/output**.
+Start with the flagship [**Under-Mapping**](docs/under-mapping.md) map; the full
+index is in [`docs/README.md`](docs/README.md).
+
+| Feature | Spec |
+|---------|------|
+| **Under-mapping** (flagship) — world health facilities per capita | [docs/under-mapping.md](docs/under-mapping.md) |
+| **US health-mapping** — state+county per capita (spatial join) | [docs/us-health-mapping.md](docs/us-health-mapping.md) |
+| **Tag-quality** — Osmose attribute-misuse maps (world / US) | [docs/tag-quality.md](docs/tag-quality.md) |
+| **Packaging & storage** (cross-cutting) — dispatch, timeouts, MinIO paths | [docs/packaging-and-storage.md](docs/packaging-and-storage.md) |
+
 ## OSM tag-quality (attribute-misuse) maps
 
 The sibling of under-mapping ("where data is *missing*") is **mis-mapping**:
