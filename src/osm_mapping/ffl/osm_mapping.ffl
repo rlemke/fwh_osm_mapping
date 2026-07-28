@@ -88,7 +88,7 @@ namespace osm_mapping.workflows {
         force: Boolean = false
     ) => (status: String, html_path: String, country_count: Int, matched: Int) andThen {
         counts = CountFacilities(force = $.force)
-        map = BuildMappingMap(dependency_signal = counts.country_count)
+        map = BuildMappingMap() after counts
         yield BuildMappingEquityMap(
             status = "completed",
             html_path = map.html_path,
@@ -115,7 +115,7 @@ namespace osm_mapping.workflows {
         force: Boolean = false
     ) => (status: String, html_path: String, detail: String) andThen {
         issues = FetchTagIssues(force = $.force)
-        map = BuildTagQualityWorld(dependency_signal = issues.leaf_count)
+        map = BuildTagQualityWorld() after issues
         yield BuildTagQualityWorldMap(status = "completed", html_path = map.html_path, detail = map.detail)
     }
 
@@ -124,7 +124,7 @@ namespace osm_mapping.workflows {
         force: Boolean = false
     ) => (status: String, html_path: String, detail: String) andThen {
         issues = FetchTagIssues(force = $.force)
-        map = BuildTagQualityUsStates(dependency_signal = issues.leaf_count)
+        map = BuildTagQualityUsStates() after issues
         yield BuildTagQualityUsStatesMap(status = "completed", html_path = map.html_path, detail = map.detail)
     }
 
@@ -133,7 +133,7 @@ namespace osm_mapping.workflows {
         force: Boolean = false
     ) => (status: String, html_path: String, detail: String) andThen {
         issues = FetchTagIssues(force = $.force)
-        map = BuildTagQualityUsCounties(dependency_signal = issues.leaf_count)
+        map = BuildTagQualityUsCounties() after issues
         yield BuildTagQualityUsCountiesMap(status = "completed", html_path = map.html_path, detail = map.detail)
     }
 }
