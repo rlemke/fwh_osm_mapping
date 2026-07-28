@@ -30,6 +30,7 @@ write-up.
 | Spec | What it covers |
 |------|----------------|
 | [packaging-and-storage.md](packaging-and-storage.md) | The `DomainPackage` entry point, the 7-entry handler dispatch table, the `runner_env` timeout tuning (`timeout_ms=0` + 45-min global), the backend-aware cache/output paths (local vs MinIO), the shared census-us cache dependency, and the **stale-test** honesty note. |
+| [ffl-examples.md](ffl-examples.md) | **Usage patterns.** A gallery of complete, compile-checked FFL examples over these facets — `dependency_signal` sequencing, one fetch feeding parallel renders, call-time mixins, `catch`, `when` guards, multi-prefix publish. |
 
 ---
 

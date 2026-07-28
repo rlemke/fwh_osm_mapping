@@ -21,6 +21,46 @@ population (a recognised OSM "digital divide" / mapping-inequality signal).
 - **Storage** — cache + output follow `FW_STORAGE` (`local` / `hdfs` / `s3`);
   on the fleet they land in the shared MinIO at `cache/osm-mapping/`.
 
+## FFL at a glance
+
+The domain is driven from [FFL](https://github.com/rlemke/facetwork/blob/main/docs/reference/language/grammar.md),
+Facetwork's workflow language. A step is `name = Facet(args)`; steps that
+reference each other are ordered, steps that don't run in parallel — so one cached
+fetch can feed three renders at once:
+
+```ffl
+namespace my.osm_mapping {
+
+    use osm_mapping.sources
+    use osm_mapping.maps
+
+    /** One Osmose fetch → three tag-quality renders in parallel. */
+    workflow TagQualityFamily(force: Boolean = false) => (world: String, states: String, counties: String) andThen {
+
+        issues = osm_mapping.sources.FetchTagIssues(force = $.force)
+
+        world = osm_mapping.maps.BuildTagQualityWorld(dependency_signal = issues.leaf_count)
+        states = osm_mapping.maps.BuildTagQualityUsStates(dependency_signal = issues.leaf_count)
+        counties = osm_mapping.maps.BuildTagQualityUsCounties(dependency_signal = issues.leaf_count)
+
+        yield TagQualityFamily(
+            world = world.html_path,
+            states = states.html_path,
+            counties = counties.html_path)
+    }
+}
+```
+
+```bash
+fw ffl run --primary my.ffl --library src/osm_mapping/ffl/osm_mapping.ffl \
+  --workflow my.osm_mapping.TagQualityFamily
+```
+
+📖 **[docs/ffl-examples.md](docs/ffl-examples.md)** — the full example gallery:
+`dependency_signal` sequencing, one-fetch-many-renders, call-time mixins for
+throttled endpoints, `catch`, `when` guards against partial Overpass counts, and
+publishing several maps in one commit. Every snippet there is compile-checked.
+
 ## Feature specifications
 
 Every feature has a spec in [**`docs/`**](docs/README.md) — how it works,
