@@ -39,9 +39,9 @@ namespace my.osm_mapping {
 
         issues = osm_mapping.sources.FetchTagIssues(force = $.force)
 
-        world = osm_mapping.maps.BuildTagQualityWorld(dependency_signal = issues.leaf_count)
-        states = osm_mapping.maps.BuildTagQualityUsStates(dependency_signal = issues.leaf_count)
-        counties = osm_mapping.maps.BuildTagQualityUsCounties(dependency_signal = issues.leaf_count)
+        world = osm_mapping.maps.BuildTagQualityWorld() after issues
+        states = osm_mapping.maps.BuildTagQualityUsStates() after issues
+        counties = osm_mapping.maps.BuildTagQualityUsCounties() after issues
 
         yield TagQualityFamily(
             world = world.html_path,
@@ -57,7 +57,7 @@ fw ffl run --primary my.ffl --library src/osm_mapping/ffl/osm_mapping.ffl \
 ```
 
 📖 **[docs/ffl-examples.md](docs/ffl-examples.md)** — the full example gallery:
-`dependency_signal` sequencing, one-fetch-many-renders, call-time mixins for
+`after` sequencing, one-fetch-many-renders, call-time mixins for
 throttled endpoints, `catch`, `when` guards against partial Overpass counts, and
 publishing several maps in one commit. Every snippet there is compile-checked.
 

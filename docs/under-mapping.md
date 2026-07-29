@@ -25,8 +25,8 @@ that rigour for a single, cheap, cacheable feature class.
 
 Pipeline position: **Overpass count → cache → join onto Natural Earth geometry →
 MapLibre HTML**. The count (`CountFacilities`) and the render (`BuildMappingMap`)
-are two separate event facets, sequenced in the workflow by passing the count's
-`country_count` as `BuildMappingMap`'s `dependency_signal`.
+are two separate event facets. No value flows between them — the render reads the
+cache the count wrote — so the workflow orders them with `after counts`.
 
 ## How it works
 
@@ -102,8 +102,8 @@ All facets are **event** facets (each needs a handler) and carry
 | Facet / workflow | Kind | Effect / Cost / Timeout | Purpose (from FFL docstring) |
 |---|---|---|---|
 | `sources.CountFacilities(force=false) => (country_count: Int)` | event | external / expensive / 45 min | Count OSM health facilities (`amenity=hospital`/`clinic`) per country via Overpass and cache the per-country aggregate. |
-| `maps.BuildMappingMap(dependency_signal=0) => (html_path, geojson_path, country_count, matched)` | event | io / cheap / 10 min | Join the cached counts onto Natural Earth geometry, compute per-million from population, render the world choropleth. `dependency_signal` sequences it after the count. |
-| `workflows.BuildMappingEquityMap(force=false) => (status, html_path, country_count, matched)` | workflow | — | `counts = CountFacilities(force)` → `map = BuildMappingMap(dependency_signal = counts.country_count)` → yield. |
+| `maps.BuildMappingMap() => (html_path, geojson_path, country_count, matched)` | event | io / cheap / 10 min | Join the cached counts onto Natural Earth geometry, compute per-million from population, render the world choropleth. Callers order it with `after` — it reads the count's cache and takes no value from it. |
+| `workflows.BuildMappingEquityMap(force=false) => (status, html_path, country_count, matched)` | workflow | — | `counts = CountFacilities(force)` → `map = BuildMappingMap()` → yield. |
 
 Handler wiring: `CountFacilities` → `handle_count_facilities` (returns
 `{"country_count": len(counts)}`), `BuildMappingMap` → `handle_build_mapping_map`

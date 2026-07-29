@@ -20,7 +20,8 @@ render → publish).
 The algorithm / data flow, step by step. Name the concrete functions and the shape
 of the data at each (Overpass `area` count → `{iso2: count}` JSON → join onto
 Natural Earth features → MapLibre HTML, etc.). If the count and the render are two
-separate facets sequenced by a `dependency_signal`, say so.
+separate facets ordered with an `after` clause (because they share only a cache),
+say so.
 
 ## Fan-out
 Does it fan out across the fleet? **Be precise:** this domain's "per-country" /

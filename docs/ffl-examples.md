@@ -29,9 +29,9 @@ cheap renders many times.
 |---|---|---|
 | `osm_mapping.sources.CountFacilities` | `(force = false) => (country_count: Int)` | Per-country Overpass health-facility counts → cached aggregate |
 | `osm_mapping.sources.FetchTagIssues` | `(force = false) => (leaf_count: Int)` | Osmose QA tag-issue counts for every leaf region → one cached aggregate |
-| `osm_mapping.maps.BuildMappingMap` | `(dependency_signal: Int = 0) => (html_path, geojson_path, country_count, matched)` | Facilities-per-million world choropleth |
+| `osm_mapping.maps.BuildMappingMap` | `() => (html_path, geojson_path, country_count, matched)` | Facilities-per-million world choropleth |
 | `osm_mapping.maps.BuildUsMap` | `(force = false) => (html_path, facility_count, county_count, state_count)` | US state+county per-capita choropleth |
-| `osm_mapping.maps.BuildTagQualityWorld` | `(dependency_signal = 0, force = false) => (region, html_path, feature_count, detail)` | Tag-quality by country |
+| `osm_mapping.maps.BuildTagQualityWorld` | `(force = false) => (region, html_path, feature_count, detail)` | Tag-quality by country |
 | `osm_mapping.maps.BuildTagQualityUsStates` | same shape | Tag-quality by US state |
 | `osm_mapping.maps.BuildTagQualityUsCounties` | same shape | Tag-quality by US county |
 
@@ -74,7 +74,7 @@ namespace my.osm_mapping {
 
         counts = osm_mapping.sources.CountFacilities(force = false)
 
-        map = osm_mapping.maps.BuildMappingMap(dependency_signal = counts.country_count)
+        map = osm_mapping.maps.BuildMappingMap() after counts
 
         yield MyEquityMap(html_path = map.html_path, countries = map.country_count)
     }
@@ -88,8 +88,7 @@ are always `step.field`; `$.x` reads the container's parameters.
 
 `BuildMappingMap` reads the *cache* that `CountFacilities` wrote — it needs no
 value from it. Steps with no reference between them may run in **any** order (and
-concurrently), so the dependency is made explicit by passing an upstream field into
-`dependency_signal`:
+concurrently), so the dependency is made explicit with `after`:
 
 ```ffl
 namespace my.osm_mapping {
@@ -103,7 +102,7 @@ namespace my.osm_mapping {
         counts = osm_mapping.sources.CountFacilities(force = $.force)
 
         // referencing counts.country_count is what makes this run second
-        map = osm_mapping.maps.BuildMappingMap(dependency_signal = counts.country_count)
+        map = osm_mapping.maps.BuildMappingMap() after counts
 
         yield OrderedEquityMap(html_path = map.html_path)
     }
@@ -127,9 +126,9 @@ namespace my.osm_mapping {
 
         issues = osm_mapping.sources.FetchTagIssues(force = $.force)
 
-        world = osm_mapping.maps.BuildTagQualityWorld(dependency_signal = issues.leaf_count)
-        states = osm_mapping.maps.BuildTagQualityUsStates(dependency_signal = issues.leaf_count)
-        counties = osm_mapping.maps.BuildTagQualityUsCounties(dependency_signal = issues.leaf_count)
+        world = osm_mapping.maps.BuildTagQualityWorld() after issues
+        states = osm_mapping.maps.BuildTagQualityUsStates() after issues
+        counties = osm_mapping.maps.BuildTagQualityUsCounties() after issues
 
         yield TagQualityFamily(
             world = world.html_path,
@@ -158,7 +157,7 @@ namespace my.osm_mapping {
 
         counts = osm_mapping.sources.CountFacilities(force = true) with Timeout(minutes = 180) with Retry(maxAttempts = 3, backoffSeconds = 300)
 
-        map = osm_mapping.maps.BuildMappingMap(dependency_signal = counts.country_count) with Timeout(minutes = 20)
+        map = osm_mapping.maps.BuildMappingMap() with Timeout(minutes = 20) after counts
 
         yield PatientCounts(html_path = map.html_path)
     }
@@ -184,7 +183,7 @@ namespace my.osm_mapping {
             yield BestEffortEquityMap(status = "overpass_failed", html_path = "")
         }
 
-        map = osm_mapping.maps.BuildMappingMap(dependency_signal = counts.country_count)
+        map = osm_mapping.maps.BuildMappingMap() after counts
 
         yield BestEffortEquityMap(status = "completed", html_path = map.html_path)
     }
@@ -207,7 +206,7 @@ namespace my.osm_mapping {
 
         counts = osm_mapping.sources.CountFacilities() andThen when {
             case $.country_count >= $$.min_countries => {
-                map = osm_mapping.maps.BuildMappingMap(dependency_signal = $.country_count)
+                map = osm_mapping.maps.BuildMappingMap()
                 yield GuardedEquityMap(status = "completed", html_path = map.html_path)
             }
             case _ => {
@@ -232,7 +231,7 @@ namespace my.osm_mapping {
     /** Render two maps, publish both at once. */
     workflow MappingPublish(repo: String = "rlemke/facetwork-maps") => (pages_url: String, files: Long) andThen {
 
-        world = osm_mapping.maps.BuildMappingMap(dependency_signal = 0)
+        world = osm_mapping.maps.BuildMappingMap()
         us = osm_mapping.maps.BuildUsMap(force = false)
 
         published = census.Publish.PublishWebBundle(
@@ -258,7 +257,7 @@ as well.
 |---|---|
 | Read a workflow/step parameter | `$.name` (`$$.name` one level out) |
 | Read a previous step's result | `stepname.field` |
-| Order two independent steps | pass an upstream field as `dependency_signal` |
+| Order two independent steps | `step = Facet(…) after other` (only when no value flows) |
 | Run steps in parallel | write them with no reference between them |
 | More time / retries for one call | `… with Timeout(minutes = 180) with Retry(maxAttempts = 3, backoffSeconds = 300)` |
 | Handle a step failure | `step = Facet(…) catch { yield … }` |

@@ -91,10 +91,10 @@ All event facets; `Effect`/`Cost`/`Timeout` mixins are verbatim from the FFL.
 | Facet / workflow | Kind | Effect / Cost / Timeout | Purpose (from FFL docstring) |
 |---|---|---|---|
 | `sources.FetchTagIssues(force=false) => (leaf_count: Int)` | event | external / expensive / 60 min | Fetch + cache Osmose counts (9002 deprecated + 3040 incorrect) for every leaf region worldwide; one small aggregate all tag-quality maps read from. |
-| `maps.BuildTagQualityWorld(dependency_signal=0, force=false) => (region, html_path, feature_count, detail)` | event | io / moderate / 15 min | World choropleth by country, per 1,000 km². |
+| `maps.BuildTagQualityWorld(force=false) => (region, html_path, feature_count, detail)` | event | io / moderate / 15 min | World choropleth by country, per 1,000 km². |
 | `maps.BuildTagQualityUsStates(…) => (region, html_path, feature_count, detail)` | event | io / moderate / 15 min | US choropleth by state. |
 | `maps.BuildTagQualityUsCounties(…) => (region, html_path, feature_count, detail)` | event | io / moderate / 20 min | US choropleth by county (reuses census-us county geometry). |
-| `workflows.BuildTagQualityWorldMap` / `…UsStatesMap` / `…UsCountiesMap` | workflow | — | `issues = FetchTagIssues(force)` → `map = BuildTagQuality<scope>(dependency_signal = issues.leaf_count)` → yield. |
+| `workflows.BuildTagQualityWorldMap` / `…UsStatesMap` / `…UsCountiesMap` | workflow | — | `issues = FetchTagIssues(force)` → `map = BuildTagQuality<scope>()` → yield. |
 
 Handler wiring: `FetchTagIssues` → `handle_fetch_tag_issues`
 (`{"leaf_count": len(counts)}`); the three map facets share a `_tq(fn, label)`
