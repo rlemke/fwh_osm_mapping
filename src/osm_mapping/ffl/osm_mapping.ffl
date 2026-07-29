@@ -30,10 +30,9 @@ namespace osm_mapping.sources {
 namespace osm_mapping.maps {
     /** Join the cached facility counts onto Natural Earth country geometry,
       * compute facilities-per-million from population, and render the world
-      * choropleth. ``dependency_signal`` sequences this after the count. */
-    event facet BuildMappingMap(
-        dependency_signal: Int = 0
-    ) => (
+      * choropleth. Reads the cached counts, so callers must order it with
+      * ``after <count step>`` (no value flows between them). */
+    event facet BuildMappingMap() => (
         html_path: String,
         geojson_path: String,
         country_count: Int,
@@ -55,7 +54,6 @@ namespace osm_mapping.maps {
     /** Tag-quality world choropleth by country: Osmose deprecated + incorrect-tag
       * issues aggregated to Natural Earth countries, per 1,000 km². */
     event facet BuildTagQualityWorld(
-        dependency_signal: Int = 0,
         force: Boolean = false
     ) => (
         region: String, html_path: String, feature_count: Int, detail: String
@@ -63,7 +61,6 @@ namespace osm_mapping.maps {
 
     /** Tag-quality US choropleth by state (Osmose issues per 1,000 km²). */
     event facet BuildTagQualityUsStates(
-        dependency_signal: Int = 0,
         force: Boolean = false
     ) => (
         region: String, html_path: String, feature_count: Int, detail: String
@@ -72,7 +69,6 @@ namespace osm_mapping.maps {
     /** Tag-quality US choropleth by county (Osmose issues per 1,000 km²; reuses
       * the census-us county geometry cache). */
     event facet BuildTagQualityUsCounties(
-        dependency_signal: Int = 0,
         force: Boolean = false
     ) => (
         region: String, html_path: String, feature_count: Int, detail: String
