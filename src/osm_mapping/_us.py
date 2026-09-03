@@ -153,37 +153,19 @@ def _assemble_counties() -> list[dict]:
 
 
 def _list_census_states() -> list[str]:
-    """State names = the per-state dirs under the census metrics prefix."""
-    import facetwork.runtime.storage as _fws  # noqa
-    import boto3
-    import os
-    # Resolve the bucket from FW_DATA_ROOT (s3://bucket); local falls back to a scan.
-    data_root = cstore._data_root()
-    if cstore.is_remote(data_root):
-        bucket = data_root.split("://", 1)[1].split("/", 1)[0]
-        ep = os.environ.get("FW_S3_ENDPOINT")
-        s3 = boto3.client(
-            "s3", endpoint_url=ep,
-            aws_access_key_id=os.environ.get("FW_S3_ACCESS_KEY"),
-            aws_secret_access_key=os.environ.get("FW_S3_SECRET_KEY"),
-        )
-        states = set()
-        for pg in s3.get_paginator("list_objects_v2").paginate(
-            Bucket=bucket, Prefix=CENSUS_METRICS_PREFIX + "/"
-        ):
-            for o in pg.get("Contents", []):
-                if o["Key"].endswith("/metrics.geojson"):
-                    states.add(o["Key"].split("/")[-2])
-        return sorted(states)
-    # local backend: scan the directory
-    base = cstore.join(data_root, CENSUS_METRICS_PREFIX)
-    if os.path.isdir(base):
-        return sorted(
-            d for d in os.listdir(base)
-            if os.path.exists(os.path.join(base, d, "metrics.geojson"))
-        )
-    return []
+    """States that have a published metrics.geojson.
 
+    ⚠️ This was three byte-identical copies across fwh_h1b, fwh_livability and
+    fwh_osm_mapping, each building its OWN boto3 client for the S3 half —
+    clients that omitted the region and the AWS_* credential fallback every
+    other client in the codebase has. They worked only because this fleet always
+    sets FW_S3_*. One implementation now, over the runtime backend, so local and
+    s3:// take the same path.
+    """
+    from facetwork.domains.storage import subdirs_containing
+
+    base = cstore.join(cstore._data_root(), CENSUS_METRICS_PREFIX)
+    return subdirs_containing(base, "metrics.geojson")
 
 def _census_metrics_path(state: str) -> str:
     data_root = cstore._data_root()

@@ -20,6 +20,18 @@ from facetwork.domains.storage import domain_storage, is_remote, join  # noqa: F
 _S = domain_storage("osm_mapping", path_name="osm-mapping")
 
 
+def data_root() -> str:
+    return _S.data_root()
+
+
+# ⚠️ Kept because callers use it. The first shim template exposed only the eight
+# public names and DROPPED this private one, which three repos' _lib.py call —
+# an AttributeError on a path the tests never exercise, so CI stayed green. The
+# audit that found it had to compare against the commit BEFORE the migration;
+# comparing against HEAD (which already had the shim) reported everything clean.
+_data_root = data_root
+
+
 def cache_root() -> str:
     return _S.cache_root()
 
