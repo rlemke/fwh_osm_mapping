@@ -423,7 +423,7 @@ def _render(feats: list[dict], title: str, subtitle: str, note: str, *,
 <script>
 const DATA={data_js}, METRICS={metrics_js};
 const map=new maplibregl.Map({{container:'map',style:{{version:8,sources:{{c:{{type:'raster',
- tiles:['https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{{z}}/{{x}}/{{y}}.png'],tileSize:256,
+ tiles:['https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'],tileSize:256,
  attribution:'© OpenStreetMap'}}}},layers:[{{id:'bg',type:'raster',source:'c'}}]}},
  center:{json.dumps(center)},zoom:{zoom}}});
 const RAMP=['#fee5d9','#fcae91','#fb6a4a','#de2d26','#a50f15'];  // light->dark = more misuse
