@@ -39,7 +39,7 @@ TIGER `GEOID`/`STATEFP`/`ALAND`). Name the join key and the normalised metric
 ## External libraries / binaries
 Every non-stdlib dependency this feature relies on and what for — `requests`
 (Overpass/Osmose HTTP), `shapely` (geometry, STRtree spatial join), `pyproj`
-(geodesic area), `boto3` (listing the census-us MinIO cache). Distinguish a
+(geodesic area), `facetwork.domains.storage` (listing the census-us MinIO cache). Distinguish a
 **pip** dependency from an external **HTTP service** (Overpass mirror, Osmose QA
 API, Natural Earth raw GitHub).
 

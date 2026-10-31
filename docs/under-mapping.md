@@ -92,7 +92,8 @@ not a distributed fan-out across runners.
   `overpass-api.de` first, `overpass.kumi.systems` as fallback (`OVERPASS_ENDPOINTS`;
   main-first because kumi-first was observed timing out and falling back ~10× slower)
   — and **raw.githubusercontent.com** for Natural Earth. The rendered HTML also
-  pulls MapLibre GL (unpkg) and CARTO Voyager basemap tiles at view time.
+  pulls MapLibre GL (unpkg) and keyless OpenStreetMap raster basemap tiles at view
+  time (CARTO began watermarking unkeyed tiles in Aug 2026).
 
 ## Facets & workflows
 

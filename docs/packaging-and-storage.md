@@ -59,10 +59,12 @@ three families are **single-task + in-process `ThreadPoolExecutor`**, not fleet
 
 ## Data & fields
 
-**Backend-aware paths (`storage.py`).** A thin wrapper over
-`facetwork.runtime.storage`, the same shape census-us / conflict / save-earth use:
+**Backend-aware paths (`storage.py`).** A thin shim over the platform's shared
+`facetwork.domains.storage` (`domain_storage("osm_mapping", path_name="osm-mapping")`),
+which most fwh_* repos now use instead of their own copies; the shim keeps this
+package's import path and pins the layout its data already sits in:
 
-- `_data_root()` = `FW_DATA_ROOT` or `get_output_base()`.
+- `_data_root()` / `data_root()` = `FW_DATA_ROOT` or `get_output_base()`.
 - `cache_root()` = `FW_OSM_MAPPING_CACHE_DIR` override, else
   `<root>/cache/osm-mapping/cache` when the root is remote (`://`), else
   `<root>/osm-mapping-cache` locally.
@@ -76,17 +78,19 @@ three families are **single-task + in-process `ThreadPoolExecutor`**, not fleet
 **Shared census-us cache.** The US maps read (never write) census-us artifacts under
 the *data root*, not osm-mapping's own cache: `cache/census-us/output/metrics/<state>/metrics.geojson`
 (county geometry+ACS) and `output/tiger/state/us_state.geojson` (states).
-`_us._list_census_states` lists per-state files via **`boto3`** paginator when the
-root is remote, else scans the local directory.
+`_us._list_census_states` lists the state directories holding a `metrics.geojson`
+through the shared storage layer (`subdirs_containing`), so local and `s3://` take
+the same path.
 
 ## External libraries / binaries
 
-- **`facetwork`** — `DomainPackage`, `facetwork.config.get_output_base`,
-  `facetwork.runtime.storage` (the platform, not a pip extra).
+- **`facetwork`** — `DomainPackage`, `facetwork.domains.storage` (which uses the
+  runtime's single S3 client) (the platform, not a pip extra).
 - **`requests`, `shapely>=2.0`, `pyproj>=3.4`** — the declared `pyproject.toml`
   dependencies (used by the map modules, not this wiring layer).
-- **`boto3`** — imported lazily inside `_us` for MinIO bucket listing; not a hard
-  declared dependency (present via the fleet's `[s3]` extra).
+- **`boto3`** — not a declared dependency (present via the fleet's `[s3]` extra);
+  the object-store client comes from the runtime's storage layer. `_us._assemble_counties`
+  still has a leftover `import boto3`, so the US map needs it installed.
 
 ## Facets & workflows
 
@@ -94,7 +98,7 @@ None declared here — this layer *serves* the facets declared in
 `ffl/osm_mapping.ffl` (see [under-mapping](under-mapping.md),
 [us-health-mapping](us-health-mapping.md), [tag-quality](tag-quality.md)). The FFL
 file's three namespaces (`sources`, `maps`, `workflows`) map 1:1 onto the dispatch
-table above plus the six workflows.
+table above plus the five workflows.
 
 ## Cache / output
 

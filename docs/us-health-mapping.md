@@ -69,10 +69,11 @@ execution timeout.
 - **`shapely`** (pip, `>=2.0`) — `shape`, `Point`, `STRtree` (spatial join),
   `unary_union` (county→state dissolve), `simplify`/`mapping` (browser-light
   geometry). This is the geometry engine the world map doesn't need.
-- **`boto3`** (via the `[s3]`-style path) — `_list_census_states` /
-  `_assemble_counties` list the per-state census files in the MinIO bucket
-  (`s3.get_paginator("list_objects_v2")`) when the data root is remote; a local data
-  root falls back to an `os.listdir` scan.
+- **Shared storage layer** — `_list_census_states` lists the per-state census
+  directories with `facetwork.domains.storage.subdirs_containing`, which handles
+  local and `s3://` data roots the same way (it uses the runtime's S3 client).
+  `_assemble_counties` still carries an unused `import boto3`, so `boto3` must be
+  installed (the fleet's `[s3]` extra).
 - **External HTTP services:** Overpass (same two-endpoint list as `_lib`). Geometry
   and population come entirely from the **census-us MinIO cache**, not a fresh
   TIGER/ACS download.
@@ -122,4 +123,4 @@ execution timeout.
 - [tag-quality](tag-quality.md) — reuses `_us._assemble_counties` for its US-county
   map, and the same census-us cache dependency.
 - [packaging-and-storage](packaging-and-storage.md) — the census-us cache path
-  resolution, `boto3` bucket listing, and handler/timeout wiring.
+  resolution, census-state listing, and handler/timeout wiring.

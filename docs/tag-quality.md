@@ -79,10 +79,11 @@ Leaf→region mapping is the hard part:
 - **`pyproj`** (pip, `>=3.4`) — geodesic area for the per-1,000-km² normalisation
   (`_GEOD.geometry_area_perimeter`). Distinct from the world under-mapping map,
   which needs neither.
-- **`boto3` / census-us cache** — the US state/county maps read TIGER geometry from
+- **census-us cache** — the US state/county maps read TIGER geometry from
   the shared census-us MinIO cache (`_read_census_json`, `_us._assemble_counties`).
 - **External HTTP services:** the **Osmose QA API** and **raw.githubusercontent.com**
-  (Natural Earth); MapLibre + CARTO basemap at view time.
+  (Natural Earth); MapLibre + keyless OpenStreetMap raster tiles at view time
+  (CARTO began watermarking unkeyed tiles in Aug 2026).
 
 ## Facets & workflows
 

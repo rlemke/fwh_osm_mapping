@@ -116,8 +116,10 @@ the public ohsome API can't serve at whole-world scale in reasonable time.
 src/osm_mapping/
 ├── __init__.py        # DomainPackage (facetwork.domains entry point) + runner_env
 ├── _lib.py            # download_facility_counts (Overpass fan-out) + build_map + render
-├── storage.py         # backend-aware cache/output paths (MinIO on the fleet)
-├── ffl/osm_mapping.ffl # CountFacilities / BuildMappingMap facets + BuildMappingEquityMap workflow
+├── _us.py             # US state+county map (Overpass + census-us county geometry)
+├── _tagquality.py     # Osmose tag-quality fetch + world / US-state / US-county maps
+├── storage.py         # shim over facetwork.domains.storage (MinIO on the fleet)
+├── ffl/osm_mapping.ffl # 7 event facets + 5 workflows (sources / maps / workflows)
 └── handlers/          # thin event-facet dispatchers over _lib
 ```
 
